@@ -66,13 +66,26 @@ function getPythonPath() {
     return isWindows ? 'python' : 'python3';
 }
 
+const { execSync } = require('child_process');
+
 function main() {
     acquireLock();
-    
+
+    // Auto-update check on startup
+    if (fs.existsSync(path.join(SCRIPT_DIR, '.git'))) {
+        try {
+            console.log('\x1b[36m[LAUNCHER] Checking for system updates from GitHub...\x1b[0m');
+            execSync('git pull', { cwd: SCRIPT_DIR, stdio: 'ignore', timeout: 6000 });
+            console.log('\x1b[32m[LAUNCHER] Sync complete (using latest code).\x1b[0m');
+        } catch (e) {
+            console.log('\x1b[33m[LAUNCHER] Update check bypassed (Offline, timeout, or local changes).\x1b[0m');
+        }
+    }
+
     const pythonExe = getPythonPath();
     const cliScript = path.join(SCRIPT_DIR, 'jojo_cli.py');
     const args = [cliScript, ...process.argv.slice(2)];
-    
+
     console.log(`\x1b[33m[LAUNCHER] Starting Jojo process using ${pythonExe}...\x1b[0m`);
     
     const child = spawn(pythonExe, args, {
