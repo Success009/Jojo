@@ -7,8 +7,8 @@ from colorama import init, Fore, Style
 init(autoreset=True)
 
 import os
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_FILE = os.path.join(SCRIPT_DIR, "jojo_system.log")
+user_home = os.path.expanduser("~")
+LOG_FILE = os.path.join(user_home, ".jojo_system.log")
 
 class Logger:
     @staticmethod

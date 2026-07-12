@@ -29,7 +29,7 @@ try:
 except ImportError:
     pass
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+import tempfile
 
 class WhisperListener:
     def __init__(self, model_size="base.en", sample_rate=16000):
@@ -41,7 +41,8 @@ class WhisperListener:
         self.is_recording = False
         self.recorded_chunks = [ ]  # Space inside empty brackets
         self.listen_thread = None
-        self.temp_wav_path = os.path.join(SCRIPT_DIR, "temp_chunk.wav")
+        # Save temp audio file in the system temp directory to guarantee write permissions
+        self.temp_wav_path = os.path.join(tempfile.gettempdir(), "jojo_temp_chunk.wav")
         self.stream = None
         
     def initialize_whisper(self):

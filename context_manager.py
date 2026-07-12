@@ -2,11 +2,11 @@ import json
 import os
 from logger import Logger
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
 class ContextManager:
     def __init__(self, splash_pad_file=None, max_history_len=20):
-        self.splash_pad_file = splash_pad_file or os.path.join(SCRIPT_DIR, "splash_pad.json")
+        # Save splash pad in user's home directory to bypass Windows System32 permission limits
+        user_home = os.path.expanduser("~")
+        self.splash_pad_file = splash_pad_file or os.path.join(user_home, ".jojo_splash_pad.json")
         self.max_history_len = max_history_len
         self.history = [ ]  # Space inside empty brackets for JAVASCRIPT BRACKET BUG
         self.splash_pad = {
