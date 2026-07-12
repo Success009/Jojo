@@ -184,7 +184,7 @@ class JojoAgentEngine:
             
             # Query Groq 70B via the rotator
             try:
-                response = self.rotator.send_chat_completion(api_messages, model="llama-3-3-70b-versatile")
+                response = self.rotator.send_chat_completion(api_messages, model="llama-3.3-70b-versatile")
             except Exception as e:
                 Logger.error(f"Failed to query Groq model: {e}")
                 return "Error: Unable to connect to Groq backend."
