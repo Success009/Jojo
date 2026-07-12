@@ -1,0 +1,19 @@
+{
+  "name": "jojo-cli",
+  "version": "1.0.0",
+  "description": "Jojo AI Companion Windows CLI Launcher",
+  "main": "bin/jojo.js",
+  "bin": {
+    "jojo": "./bin/jojo.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jojo",
+    "ai",
+    "assistant"
+  ],
+  "author": "Jojo Dev Team",
+  "license": "ISC"
+}

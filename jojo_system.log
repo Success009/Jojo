@@ -1,0 +1,50 @@
+[2026-07-12 16:24:44] [SYSTEM] STARTING AUTOMATED MODULE VERIFICATION
+[2026-07-12 16:24:44] [SYSTEM] === RUNNING TEST: CONTEXT & SPLASH PAD ===
+[2026-07-12 16:24:44] [SYSTEM] Saved Splash Pad data successfully.
+[2026-07-12 16:24:44] [SYSTEM] Splash Pad updated: user_name = Bruce Wayne
+[2026-07-12 16:24:44] [SYSTEM] Saved Splash Pad data successfully.
+[2026-07-12 16:24:44] [SYSTEM] Loaded persistent Splash Pad data successfully.
+[2026-07-12 16:24:44] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:24:44] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:24:44] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:24:44] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:24:44] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:24:44] [SUCCESS] History successfully capped to 20
+[2026-07-12 16:24:44] [SUCCESS] Context and Splash Pad Test: PASSED
+[2026-07-12 16:24:44] [SYSTEM] === RUNNING TEST: GROQ KEY ROTATION & COOLDOWN ===
+[2026-07-12 16:24:45] [SYSTEM] Sending Query 1...
+[2026-07-12 16:24:45] [GROQ] Sending request with Key Index 0 (gsk_lVpHoo8K...mFiNsCNX)
+[2026-07-12 16:24:45] [GROQ] Request succeeded. Tokens Used: 50 (Prompt: 46, Completion: 4)
+[2026-07-12 16:24:45] [SUCCESS] Response 1: 'Jojo Online'
+[2026-07-12 16:24:45] [SYSTEM] Sending Query 2 (Triggering cooldown & rotation)...
+[2026-07-12 16:24:45] [SYSTEM] Enforcing rate-limit cooldown. Sleeping for 3.21s...
+[2026-07-12 16:24:48] [GROQ] Sending request with Key Index 0 (gsk_lVpHoo8K...mFiNsCNX)
+[2026-07-12 16:24:48] [GROQ] Request succeeded. Tokens Used: 50 (Prompt: 46, Completion: 4)
+[2026-07-12 16:24:48] [SUCCESS] Response 2: 'Jojo Online'
+[2026-07-12 16:24:48] [SUCCESS] Groq Key Rotation and Cooldown Test: PASSED
+[2026-07-12 16:24:48] [SUCCESS] Core modules verified successfully!
+[2026-07-12 16:27:58] [SYSTEM] STARTING AUTOMATED MODULE VERIFICATION
+[2026-07-12 16:27:58] [SYSTEM] === RUNNING TEST: CONTEXT & SPLASH PAD ===
+[2026-07-12 16:27:58] [SYSTEM] Saved Splash Pad data successfully.
+[2026-07-12 16:27:58] [SYSTEM] Splash Pad updated: user_name = Bruce Wayne
+[2026-07-12 16:27:58] [SYSTEM] Saved Splash Pad data successfully.
+[2026-07-12 16:27:58] [SYSTEM] Loaded persistent Splash Pad data successfully.
+[2026-07-12 16:27:58] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:27:58] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:27:58] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:27:58] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:27:58] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 16:27:58] [SUCCESS] History successfully capped to 20
+[2026-07-12 16:27:58] [SUCCESS] Context and Splash Pad Test: PASSED
+[2026-07-12 16:27:58] [SYSTEM] === RUNNING TEST: GROQ KEY ROTATION & COOLDOWN ===
+[2026-07-12 16:27:58] [SYSTEM] Sending Query 1...
+[2026-07-12 16:27:58] [GROQ] Sending request with Key Index 0 (gsk_lVpHoo8K...mFiNsCNX)
+[2026-07-12 16:27:58] [GROQ] Request succeeded. Tokens Used: 50 (Prompt: 46, Completion: 4)
+[2026-07-12 16:27:58] [SUCCESS] Response 1: 'Jojo Online'
+[2026-07-12 16:27:58] [SYSTEM] Sending Query 2 (Triggering cooldown & rotation)...
+[2026-07-12 16:27:58] [SYSTEM] Enforcing rate-limit cooldown. Sleeping for 3.17s...
+[2026-07-12 16:28:01] [GROQ] Sending request with Key Index 0 (gsk_lVpHoo8K...mFiNsCNX)
+[2026-07-12 16:28:01] [GROQ] Request succeeded. Tokens Used: 50 (Prompt: 46, Completion: 4)
+[2026-07-12 16:28:01] [SUCCESS] Response 2: 'Jojo Online'
+[2026-07-12 16:28:01] [SUCCESS] Groq Key Rotation and Cooldown Test: PASSED
+[2026-07-12 16:28:01] [SUCCESS] Core modules verified successfully!
