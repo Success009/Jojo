@@ -1,17 +1,26 @@
 import re
 import os
 import subprocess
+import time
 from logger import Logger
 from groq_client import GroqRotator
 from context_manager import ContextManager
 from browser_manager import BrowserManager
+
+# Import keyboard for live interruption
+KEYBOARD_AVAILABLE = False
+try:
+    import keyboard
+    KEYBOARD_AVAILABLE = True
+except ImportError:
+    pass
 
 SYSTEM_PROMPT = """You are Jojo, a highly capable, fast, and personable Windows AI system assistant.
 You possess a helpful, friendly, and energetic personality.
 You are running on a powerful machine with an AMD Ryzen 7000 series CPU and 16GB of RAM.
 
 === SYSTEM CAPABILITIES & BEHAVIOR ===
-1. TOKEN CONSERVATION: You understand token efficiency. Keep thoughts and reasoning incredibly brief and focused.
+1. TOKEN CONSERVATION: You understand token efficiency. Keep thoughts and reasoning incredibly brief and focused. Avoid verbose explanations.
 2. DISCIPLINED ACTION: Perform EXACTLY what is requested, no more and no less. Do not perform extra unrequested tasks.
 3. IMMEDIATE COMPLETION: Once you have successfully completed the requested task, you MUST immediately call the "finish" tool. Do not hallucinate or repeat actions.
 4. CONTEXT AWARENESS: You maintain a Splash Pad (scratchpad) containing user info, system settings, and key facts. Keep notes in the Splash Pad updated!
@@ -91,7 +100,12 @@ Available Tools:
   <filepath>C:\\path\\to\\image.png</filepath>
 </t>
 
-11. Finish / Respond to User (Use this IMMEDIATELY when the task is completed):
+11. Get Current Browser State (list of open tabs and active URL):
+<t>
+  <action>browser_get_state</action>
+</t>
+
+12. Finish / Respond to User (Use this IMMEDIATELY when the task is completed):
 <t>
   <action>finish</action>
   <response>Your final answer or report goes here.</response>
@@ -106,7 +120,7 @@ Remember, the user is looking at the headful browser window you control!
 class JojoAgentEngine:
     def __init__(self, use_pwdebug=False):
         self.rotator = GroqRotator()
-        self.context = ContextManager()
+        self.context = ContextManager(max_history_len=10) # sliding history turns
         self.browser = BrowserManager(headless=False, use_pwdebug=use_pwdebug)
         self.max_steps = 8
 
@@ -135,14 +149,12 @@ class JojoAgentEngine:
 
     def parse_tool_call(self, response_text):
         """Parses the compact <t> XML tool call structure."""
-        # Find block between <t> and </t>
         t_match = re.search(r"<t>(.*?)</t>", response_text, re.DOTALL)
         if not t_match:
             return None
             
         block_content = t_match.group(1).strip()
         
-        # Extract action
         action_match = re.search(r"<action>(.*?)</action>", block_content, re.DOTALL)
         if not action_match:
             return None
@@ -150,7 +162,6 @@ class JojoAgentEngine:
         tool_name = action_match.group(1).strip()
         arguments = { }  # Space inside empty brackets
         
-        # Extract general argument tags inside the <t> block
         tags = ["url", "selector", "text", "press_enter", "direction", "amount", "command", "key", "value", "key_combo", "filepath", "response"]
         for tag in tags:
             tag_match = re.search(f"<{tag}>(.*?)</{tag}>", block_content, re.DOTALL)
@@ -165,17 +176,22 @@ class JojoAgentEngine:
     def process_instruction(self, instruction):
         """
         Runs Jojo's multi-step decision loop for a single user instruction.
-        Clears conversation history at the start to prevent old task interference.
-        Recurses up to self.max_steps.
+        Maintains compact rolling history and injects browser state at the end of the user request.
         """
-        # Ensure fresh context sandbox for this task
-        self.context.clear_history()
+        # Inject Browser State ONLY on the initial user request of this turn to save tokens
+        b_state = self.browser.get_browser_state()
+        full_instruction = f"{instruction}\n\n[Current Browser State: {b_state}]"
         
-        Logger.agent(f"Starting isolated task: '{instruction}'")
-        self.context.add_message("user", instruction)
+        Logger.agent(f"Starting task: '{instruction}'")
+        self.context.add_message("user", full_instruction)
         
         step = 0
         while step < self.max_steps:
+            # Check for live interruption by checking if Right Control is held down
+            if KEYBOARD_AVAILABLE and keyboard.is_pressed('right ctrl'):
+                Logger.system("Right Control pressed during execution! HALTING loop immediately.")
+                return "Process interrupted and halted by user."
+
             step += 1
             Logger.agent(f"=== Agent Step {step}/{self.max_steps} ===")
             
@@ -242,7 +258,7 @@ class JojoAgentEngine:
                 k = arguments.get("key", "")
                 v = arguments.get("value", "")
                 self.context.update_splash_pad_fact(k, v)
-                tool_result = f"Splash pad updated successfully: {k} is now {v}."
+                tool_result = f"Splash pad updated: {k} is {v}."
 
             elif tool_name == "browser_press_key":
                 key_combo = arguments.get("key_combo", "")
@@ -253,6 +269,9 @@ class JojoAgentEngine:
                 abs_p = os.path.abspath(fp)
                 cmd = f'powershell -Command "Set-Clipboard -Path \'{abs_p}\'"'
                 tool_result = self.run_command_locally(cmd)
+
+            elif tool_name == "browser_get_state":
+                tool_result = self.browser.get_browser_state()
                 
             elif tool_name == "finish":
                 final_resp = arguments.get("response", "Task completed.")
@@ -263,9 +282,12 @@ class JojoAgentEngine:
                 tool_result = f"Error: Tool '{tool_name}' is not recognized."
                 Logger.error(tool_result)
                 
-            # Log result of tool and add to assistant context
-            Logger.success(f"Tool execution result (truncated): {tool_result[:150]}...")
-            self.context.add_message("user", f"Tool '{tool_name}' execution result:\n{tool_result}")
+            # Log result of tool and add to context using extremely compact entries to save tokens
+            truncated_res = tool_result[:180] + "..." if len(tool_result) > 180 else tool_result
+            Logger.success(f"Tool execution result (truncated): {truncated_res}")
+            
+            # Append compact representation of the tool result back to rolling context
+            self.context.add_message("user", f"Tool '{tool_name}' result:\n{truncated_res}")
             
         Logger.error("Max recursion steps reached without a final answer.")
         return "Task took too long to complete. (Recursion depth limit reached)."

@@ -116,35 +116,43 @@ class BrowserManager:
             Logger.error(f"Typing failed on '{selector}': {e}")
             return f"Typing failed: {e}"
 
+    def get_browser_state(self):
+        if not self.context or not self.page:
+            return "Browser is currently closed."
+        try:
+            pages = self.context.pages
+            tab_info = [ ]  # Space inside empty brackets
+            for idx, p in enumerate(pages):
+                active_str = " (Active)" if p == self.page else ""
+                tab_info.append(f"Tab {idx+1}{active_str}: '{p.title()}' - {p.url}")
+            return "\n".join(tab_info)
+        except Exception as e:
+            return f"Error getting browser state: {e}"
+
     def get_page_summary(self):
         if not self.page:
             return "Error: Browser not started."
         try:
             url = self.page.url
             title = self.page.title()
-            # Extract basic readable text
             text_content = self.page.evaluate("() => document.body.innerText")
             
-            # Keep summary concise
+            # Keep summary extremely compact (first 250 words) to save tokens
             words = text_content.split()
-            truncated_text = " ".join(words[:400]) # first 400 words
+            truncated_text = " ".join(words[:250])
             
-            # Find input elements
             inputs = self.page.evaluate("""() => {
                 return Array.from(document.querySelectorAll('input, button, select, textarea')).map(el => {
-                    return `${el.tagName.toLowerCase()}${el.id ? '#'+el.id : ''}${el.className ? '.'+el.className.split(' ').join('.') : ''} [type="${el.getAttribute('type') || ''}"] [placeholder="${el.getAttribute('placeholder') || ''}"] [text="${el.innerText || el.value || ''}"]`;
-                }).slice(0, 20);
+                    return `${el.tagName.toLowerCase()}${el.id ? '#'+el.id : ''} [type="${el.getAttribute('type') || ''}"] [placeholder="${el.getAttribute('placeholder') || ''}"] [text="${(el.innerText || el.value || '').slice(0, 30)}"]`;
+                }).slice(0, 15);
             }""")
             
             inputs_summary = "\n".join([f"- {inp}" for inp in inputs])
             
             return (
-                f"Current URL: {url}\n"
-                f"Page Title: {title}\n"
-                f"--- Page Text Content (Truncated) ---\n"
-                f"{truncated_text}...\n"
-                f"--- Interactive Elements (Top 20) ---\n"
-                f"{inputs_summary}"
+                f"URL: {url} | Title: {title}\n"
+                f"Text snippet: {truncated_text}...\n"
+                f"Interactive Elements:\n{inputs_summary}"
             )
         except Exception as e:
             return f"Error extracting page summary: {e}"
