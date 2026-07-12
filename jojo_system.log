@@ -48,3 +48,28 @@
 [2026-07-12 16:28:01] [SUCCESS] Response 2: 'Jojo Online'
 [2026-07-12 16:28:01] [SUCCESS] Groq Key Rotation and Cooldown Test: PASSED
 [2026-07-12 16:28:01] [SUCCESS] Core modules verified successfully!
+[2026-07-12 17:35:07] [SYSTEM] STARTING AUTOMATED MODULE VERIFICATION
+[2026-07-12 17:35:07] [SYSTEM] === RUNNING TEST: CONTEXT & SPLASH PAD ===
+[2026-07-12 17:35:07] [SYSTEM] Saved Splash Pad data successfully.
+[2026-07-12 17:35:07] [SYSTEM] Splash Pad updated: user_name = Bruce Wayne
+[2026-07-12 17:35:07] [SYSTEM] Saved Splash Pad data successfully.
+[2026-07-12 17:35:07] [SYSTEM] Loaded persistent Splash Pad data successfully.
+[2026-07-12 17:35:07] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 17:35:07] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 17:35:07] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 17:35:07] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 17:35:07] [SYSTEM] Context sliding: Removed oldest message from history: user
+[2026-07-12 17:35:07] [SUCCESS] History successfully capped to 20
+[2026-07-12 17:35:07] [SUCCESS] Context and Splash Pad Test: PASSED
+[2026-07-12 17:35:07] [SYSTEM] === RUNNING TEST: GROQ KEY ROTATION & COOLDOWN ===
+[2026-07-12 17:35:07] [SYSTEM] Sending Query 1...
+[2026-07-12 17:35:07] [GROQ] Sending request with Key Index 0 (gsk_lVpHoo8K...mFiNsCNX)
+[2026-07-12 17:35:08] [GROQ] Request succeeded. Tokens Used: 50 (Prompt: 46, Completion: 4)
+[2026-07-12 17:35:08] [SUCCESS] Response 1: 'Jojo Online'
+[2026-07-12 17:35:08] [SYSTEM] Sending Query 2 (Triggering cooldown & rotation)...
+[2026-07-12 17:35:08] [SYSTEM] Enforcing rate-limit cooldown. Sleeping for 2.98s...
+[2026-07-12 17:35:10] [GROQ] Sending request with Key Index 0 (gsk_lVpHoo8K...mFiNsCNX)
+[2026-07-12 17:35:11] [GROQ] Request succeeded. Tokens Used: 50 (Prompt: 46, Completion: 4)
+[2026-07-12 17:35:11] [SUCCESS] Response 2: 'Jojo Online'
+[2026-07-12 17:35:11] [SUCCESS] Groq Key Rotation and Cooldown Test: PASSED
+[2026-07-12 17:35:11] [SUCCESS] Core modules verified successfully!

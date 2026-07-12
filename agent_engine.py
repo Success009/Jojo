@@ -1,5 +1,5 @@
-import json
 import re
+import os
 import subprocess
 from logger import Logger
 from groq_client import GroqRotator
@@ -11,64 +11,96 @@ You possess a helpful, friendly, and energetic personality.
 You are running on a powerful machine with an AMD Ryzen 7000 series CPU and 16GB of RAM.
 
 === SYSTEM CAPABILITIES & BEHAVIOR ===
-1. TOKEN CONSERVATION: You understand token efficiency. Keep thoughts and reasoning incredibly brief and focused. Avoid verbose explanations.
-2. MULTI-STEP RECURSION & RECOVERY: You can perform multiple actions sequentially. If an action fails (e.g. element not found), DO NOT retry the exact same action. Instead, adapt: scroll the page, use alternative selectors, query Google, or run a shell command to gather information.
-3. CONTEXT AWARENESS: You maintain scrollable history and a Splash Pad (scratchpad) containing user info, system settings, and key facts. Keep notes in the Splash Pad updated!
-4. TOOL EXECUTION: You must run tools using a single JSON block. You MUST only run ONE tool per turn, then wait for the environment's response.
-5. NO WRITING CODE: You are not a developer tool. Focus on web navigation, local command execution, system interaction, and helping the user directly.
+1. TOKEN CONSERVATION: You understand token efficiency. Keep thoughts and reasoning incredibly brief and focused.
+2. DISCIPLINED ACTION: Perform EXACTLY what is requested, no more and no less. Do not perform extra unrequested tasks.
+3. IMMEDIATE COMPLETION: Once you have successfully completed the requested task, you MUST immediately call the "finish" tool. Do not hallucinate or repeat actions.
+4. CONTEXT AWARENESS: You maintain a Splash Pad (scratchpad) containing user info, system settings, and key facts. Keep notes in the Splash Pad updated!
+5. TOOL EXECUTION: You must run tools using a single compact <t> XML block. You MUST only run ONE tool per turn, then wait for the environment's response.
+6. NO WRITING CODE: You are not a developer tool. Focus on web navigation, local command execution, system interaction, and helping the user directly.
 
-=== TOOL CALL FORMAT (MANDATORY JSON) ===
-When you want to run a tool, output a single markdown JSON block containing "action" and "arguments" keys. Do not output anything else if you are calling a tool.
+=== TOOL CALL FORMAT (MANDATORY <t> XML) ===
+When you want to run a tool, output a single <t> block containing an <action> tag and argument tags. Do not output anything else if you are calling a tool.
 
 Example Format:
-```json
-{
-  "action": "browser_open",
-  "arguments": {
-    "url": "https://example.com"
-  }
-}
-```
+<t>
+  <action>browser_open</action>
+  <url>https://example.com</url>
+</t>
 
 Available Tools:
 
 1. Open Webpage:
-{ "action": "browser_open", "arguments": { "url": "https://example.com" } }
+<t>
+  <action>browser_open</action>
+  <url>https://example.com</url>
+</t>
 
 2. Click Element on Page:
-{ "action": "browser_click", "arguments": { "selector": "button_or_text_or_css" } }
+<t>
+  <action>browser_click</action>
+  <selector>button_or_text_or_css</selector>
+</t>
 
 3. Type Text into Element:
-{ "action": "browser_type", "arguments": { "selector": "input_css", "text": "my query", "press_enter": true } }
+<t>
+  <action>browser_type</action>
+  <selector>input_css</selector>
+  <text>my query</text>
+  <press_enter>true</press_enter> <!-- or false -->
+</t>
 
 4. Get Current Page Summary (reads text & interactive elements):
-{ "action": "browser_get_summary", "arguments": { } }
+<t>
+  <action>browser_get_summary</action>
+</t>
 
 5. Scroll Page:
-{ "action": "browser_scroll", "arguments": { "direction": "down", "amount": 500 } }
+<t>
+  <action>browser_scroll</action>
+  <direction>down</direction> <!-- or up -->
+  <amount>500</amount>
+</t>
 
 6. Capture Screenshot:
-{ "action": "browser_screenshot", "arguments": { } }
+<t>
+  <action>browser_screenshot</action>
+</t>
 
 7. Run Windows Command (runs in cmd.exe):
-{ "action": "run_terminal_command", "arguments": { "command": "dir" } }
+<t>
+  <action>run_terminal_command</action>
+  <command>dir</command>
+</t>
 
 8. Update Splash Pad / Scratchpad Fact:
-{ "action": "update_splash_pad", "arguments": { "key": "user_name", "value": "Alice" } }
+<t>
+  <action>update_splash_pad</action>
+  <key>user_name</key>
+  <value>Alice</value>
+</t>
 
 9. Press Keyboard Combination (e.g. Control+V, Enter, Control+A, Tab):
-{ "action": "browser_press_key", "arguments": { "key_combo": "Control+V" } }
+<t>
+  <action>browser_press_key</action>
+  <key_combo>Control+V</key_combo>
+</t>
 
 10. Copy Local File to Windows Clipboard (ideal for copying images/documents to paste into social media, chats, or emails):
-{ "action": "copy_file_to_clipboard", "arguments": { "filepath": "C:\\path\\to\\image.png" } }
+<t>
+  <action>copy_file_to_clipboard</action>
+  <filepath>C:\\path\\to\\image.png</filepath>
+</t>
 
-11. Finish / Respond to User (Use this when the task is complete):
-{ "action": "finish", "arguments": { "response": "Your final answer or report goes here." } }
+11. Finish / Respond to User (Use this IMMEDIATELY when the task is completed):
+<t>
+  <action>finish</action>
+  <response>Your final answer or report goes here.</response>
+</t>
 
 === HOW TO SEND FILES/IMAGES TO CHATS (E.G. MESSENGER) ===
-To send a file to a chat, first run "copy_file_to_clipboard" with the local file path. Then click on the chat box using "browser_click", and finally run "browser_press_key" with argument "Control+V" followed by "Enter"! This makes sending attachments flawless.
+To send a file to a chat, first run "copy_file_to_clipboard" with the local file path. Then click on the chat box using "browser_click", and finally run "browser_press_key" with argument "Control+V" followed by "Enter"!
 
-Ensure that you formulate your actions step-by-step. Remember, the user is looking at the headful browser window you control!
+Remember, the user is looking at the headful browser window you control!
 """
 
 class JojoAgentEngine:
@@ -102,21 +134,30 @@ class JojoAgentEngine:
             return f"Error executing command: {e}"
 
     def parse_tool_call(self, response_text):
-        """Parses the JSON tool call from markdown block or raw JSON string."""
-        # Search for ```json ... ``` blocks
-        block_match = re.search(r"```json(.*?)```", response_text, re.DOTALL)
-        try:
-            if block_match:
-                json_str = block_match.group(1).strip()
-                return json.loads(json_str)
+        """Parses the compact <t> XML tool call structure."""
+        # Find block between <t> and </t>
+        t_match = re.search(r"<t>(.*?)</t>", response_text, re.DOTALL)
+        if not t_match:
+            return None
             
-            # Fallback: look for any JSON-like dict pattern { "action": ... }
-            fallback_match = re.search(r"\{\s*\"action\"\s*:\s*.*\}", response_text, re.DOTALL)
-            if fallback_match:
-                return json.loads(fallback_match.group(0).strip())
-        except Exception:
-            pass
-        return None
+        block_content = t_match.group(1).strip()
+        
+        # Extract action
+        action_match = re.search(r"<action>(.*?)</action>", block_content, re.DOTALL)
+        if not action_match:
+            return None
+            
+        tool_name = action_match.group(1).strip()
+        arguments = { }  # Space inside empty brackets
+        
+        # Extract general argument tags inside the <t> block
+        tags = ["url", "selector", "text", "press_enter", "direction", "amount", "command", "key", "value", "key_combo", "filepath", "response"]
+        for tag in tags:
+            tag_match = re.search(f"<{tag}>(.*?)</{tag}>", block_content, re.DOTALL)
+            if tag_match:
+                arguments[tag] = tag_match.group(1).strip()
+                
+        return {"action": tool_name, "arguments": arguments}
 
     def shutdown(self):
         self.browser.close()
@@ -124,9 +165,13 @@ class JojoAgentEngine:
     def process_instruction(self, instruction):
         """
         Runs Jojo's multi-step decision loop for a single user instruction.
+        Clears conversation history at the start to prevent old task interference.
         Recurses up to self.max_steps.
         """
-        Logger.agent(f"Starting processing loop for instruction: '{instruction}'")
+        # Ensure fresh context sandbox for this task
+        self.context.clear_history()
+        
+        Logger.agent(f"Starting isolated task: '{instruction}'")
         self.context.add_message("user", instruction)
         
         step = 0
@@ -139,7 +184,7 @@ class JojoAgentEngine:
             
             # Query Groq 70B via the rotator
             try:
-                response = self.rotator.send_chat_completion(api_messages, model="llama-3.3-70b-versatile")
+                response = self.rotator.send_chat_completion(api_messages, model="llama-3-3-70b-versatile")
             except Exception as e:
                 Logger.error(f"Failed to query Groq model: {e}")
                 return "Error: Unable to connect to Groq backend."
@@ -152,8 +197,7 @@ class JojoAgentEngine:
             # Parse tool call
             tool = self.parse_tool_call(response)
             if not tool or "action" not in tool:
-                # If no tool is called but text is returned, assume final response
-                Logger.system("No JSON tool block detected. Treating response as final text.")
+                Logger.system("No XML tool block <t> detected. Treating response as final text.")
                 return response
 
             tool_name = tool["action"]
@@ -173,7 +217,7 @@ class JojoAgentEngine:
             elif tool_name == "browser_type":
                 selector = arguments.get("selector", "")
                 text = arguments.get("text", "")
-                press_enter = arguments.get("press_enter", False)
+                press_enter = arguments.get("press_enter", "false").lower() == "true"
                 tool_result = self.browser.type_text(selector, text, press_enter)
                 
             elif tool_name == "browser_get_summary":
