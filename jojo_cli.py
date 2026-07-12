@@ -67,8 +67,8 @@ def main():
         Logger.system("You can type instructions directly below.")
         Logger.divider()
     else:
-        Logger.system("Jojo is listening to your mic for 'Hey Jojo' commands!")
-        Logger.system("You can also type instructions below at any time.")
+        Logger.system("Jojo Voice Link is online!")
+        Logger.system("Hold [Right Control] to speak, or type instructions below at any time.")
         Logger.divider()
 
     # Main Interactive Command Loop

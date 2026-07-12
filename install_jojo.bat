@@ -1,13 +1,10 @@
 @echo off
-title Jojo One-Click Installer
+title Jojo One-Click Installer & Updater
 cls
 
 echo =======================================================
-echo          JOJO AI COMPANION GLOBAL INSTALLER
+echo          JOJO AI COMPANION INSTALLER & UPDATER
 echo =======================================================
-echo.
-echo This installer will configure the environment, install local Python
-echo and Playwright dependencies, and register the global 'jojo' command.
 echo.
 
 :: 1. Check Node.js
@@ -29,39 +26,57 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-:: 3. Create Virtual Environment
-echo [SYSTEM] Creating isolated Python environment (venv)...
+:: 3. Git Pull Update detection
+if exist ".git" (
+    echo [SYSTEM] Git repository detected. Checking for updates from remote repository...
+    git --version >nul 2>&1
+    if %errorlevel% equ 0 (
+        git pull
+        if %errorlevel% neq 0 (
+            echo [WARNING] Failed to pull updates automatically. Continuing...
+        ) else (
+            echo [SUCCESS] Files successfully synced with GitHub!
+        )
+    ) else (
+        echo [WARNING] Git CLI is not installed or not in PATH. Skipping git pull...
+    )
+)
+
+:: 4. Create or update Virtual Environment
 if not exist "venv" (
+    echo [SYSTEM] Creating isolated Python environment (venv)...
     python -m venv venv
     if %errorlevel% neq 0 (
         echo [ERROR] Failed to create python virtual environment.
         pause
         exit /b
     )
+) else (
+    echo [SYSTEM] Existing Python environment found. Re-using virtual environment.
 )
 
-:: 4. Install requirements
-echo [SYSTEM] Activating environment and installing Python requirements...
+:: 5. Install requirements (Upgrades changed files)
+echo [SYSTEM] Activating environment and updating Python requirements...
 call venv\Scripts\activate.bat
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.txt --upgrade
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install requirements.txt dependencies.
     pause
     exit /b
 )
 
-:: 5. Install Playwright browser
-echo [SYSTEM] Preparing Playwright browser...
+:: 6. Install Playwright browser
+echo [SYSTEM] Verifying Playwright browser files are up-to-date...
 playwright install chromium
 if %errorlevel% neq 0 (
-    echo [ERROR] Failed to download Playwright browser.
+    echo [ERROR] Failed to verify Playwright browser.
     pause
     exit /b
 )
 
-:: 6. Register Global CLI Command with NPM
-echo [SYSTEM] Registering 'jojo' as a global system-wide CLI command...
+:: 7. Register Global CLI Command with NPM
+echo [SYSTEM] Registering or updating 'jojo' global command...
 npm install -g .
 if %errorlevel% neq 0 (
     echo [ERROR] Global registry failed. Retrying with npm link...
@@ -70,14 +85,14 @@ if %errorlevel% neq 0 (
 
 echo.
 echo =======================================================
-echo              INSTALLATION COMPLETED SUCCESS
+echo          JOJO SYSTEM HAS BEEN SUCCESSFULLY UPDATED!
 echo =======================================================
 echo.
-echo Jojo is now registered as a global system command!
-echo You can open any Command Prompt or PowerShell window and type:
+echo Jojo is registered and ready globally!
+echo Open any CMD/PowerShell window and type:
 echo.
 echo   jojo
 echo.
-echo to start your AI system assistant from any directory.
+echo to start your updated AI assistant.
 echo.
 pause
